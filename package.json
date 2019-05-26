@@ -1,0 +1,33 @@
+{
+  "name": "wip-create-import-maps",
+  "private": true,
+  "version": "0.0.0",
+  "description": "WIP: to generate an import map from a yarn lock",
+  "main": "index.js",
+  "scripts": {
+    "build": "babel src --out-dir dist --copy-files --include-dotfiles",
+    "start": "npm run build && node ./dist/generate.js",
+    "test": "mocha --require @babel/register",
+    "test:ci": "npm run test",
+    "test:watch": "onchange 'src/**/*.js' 'test/**/*.js' -- npm run test --silent"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "lit-html": "1.0.0",
+    "test-wc-card": "^0.0.3",
+    "type-detect": "^4.0.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.2.3",
+    "@babel/core": "^7.3.3",
+    "@babel/preset-env": "^7.0.0",
+    "@babel/register": "^7.0.0",
+    "@yarnpkg/lockfile": "^1.1.0",
+    "babel-plugin-transform-dynamic-import": "^2.1.0",
+    "chai": "^4.2.0",
+    "mocha": "^5.0.0",
+    "onchange": "^5.2.0",
+    "semver": "^6.1.0"
+  }
+}
