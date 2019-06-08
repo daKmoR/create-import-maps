@@ -86,10 +86,10 @@ export function resolvePathsAndConflicts(flatDeps, deps, mapResolves = {}) {
   return resolvedDeps;
 }
 
-export function generateFromYarnLock(yarnLockString, options) {
+export async function generateFromYarnLock(yarnLockString, options) {
   const yarnLock = lockfile.parse(yarnLockString);
 
-  const deps = findProductionDependencies(yarnLock.object, options);
+  const deps = await findProductionDependencies(yarnLock.object, options);
   let flatDeps = flattenYarnLock(deps);
   flatDeps = resolvePathsAndConflicts(flatDeps, deps);
   const imports = yarnLockToImports(flatDeps);

@@ -43,7 +43,7 @@ describe("resolvePathsAndConflicts", () => {
 
 describe("generateFromYarnLock", () => {
   it("creates an import map for a yarn.lock file", async () => {
-    const importMap = generateFromYarnLock(exampleLockFile, {
+    const importMap = await generateFromYarnLock(exampleLockFile, {
       dependencies: { "test-wc-card": "^0.0.3" }
     });
 
