@@ -35,8 +35,7 @@ function findAllParentDeps(findFor, deps) {
   return parentDeps;
 }
 
-function findPathToVersion(depName, version, deps) {
-  const targetPath = process.cwd();
+function findPathToVersion(depName, version, deps, targetPath = process.cwd()) {
   const rootVersionPath = require.resolve(depName + "/package.json", {
     paths: [targetPath]
   });
@@ -107,7 +106,12 @@ export async function resolvePathsAndConflicts(
       const selectedVersion = Object.keys(resolveMap).includes(depName)
         ? resolveMap[depName]
         : await askForVersionSelection(depName, depData);
-      resolvedDeps[depName] = findPathToVersion(depName, selectedVersion, deps);
+      resolvedDeps[depName] = findPathToVersion(
+        depName,
+        selectedVersion,
+        deps,
+        targetPath
+      );
     } else {
       const depPath = require.resolve(depName, {
         paths: [targetPath]
