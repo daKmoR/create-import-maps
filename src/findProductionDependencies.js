@@ -56,10 +56,12 @@ export async function findWorkspaceProdutionDependenies(
 export async function findProductionDependencies(
   deps,
   packageJson,
-  root = process.cwd()
+  targetPath = process.cwd()
 ) {
-  // const prodDeps = packageJson.dependencies ? packageJson.dependencies : {};
-  const prodDeps = await findWorkspaceProdutionDependenies(packageJson, root);
+  const prodDeps = await findWorkspaceProdutionDependenies(
+    packageJson,
+    targetPath
+  );
 
   let redo = false;
   do {

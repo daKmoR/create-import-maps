@@ -13,7 +13,11 @@ export async function generate(targetPath = process.cwd()) {
   );
   const packageJson = JSON.parse(packageJsonString);
 
-  const result = await generateFromYarnLock(yarnLockString, packageJson);
+  const result = await generateFromYarnLock(
+    yarnLockString,
+    packageJson,
+    targetPath
+  );
 
   fs.writeFileSync("./import-map.json", JSON.stringify(result, null, 2));
 }

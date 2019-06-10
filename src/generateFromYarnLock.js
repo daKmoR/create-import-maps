@@ -1,10 +1,10 @@
 import * as lockfile from "@yarnpkg/lockfile";
 import path from "path";
+import prompts from "prompts";
 import { findProductionDependencies } from "./findProductionDependencies";
 import { flattenYarnLock } from "./flattenYarnLock";
 
-function yarnLockToImports(deps) {
-  const targetPath = process.cwd();
+function yarnLockToImports(deps, targetPath = process.cwd()) {
   const imports = {};
   Object.keys(deps).forEach(depName => {
     try {
@@ -36,14 +36,20 @@ function findAllParentDeps(findFor, deps) {
 }
 
 function findPathToVersion(depName, version, deps) {
-  const { version: rootVersion } = require(`${depName}/package.json`);
   const targetPath = process.cwd();
+  const rootVersionPath = require.resolve(depName + "/package.json", {
+    paths: [targetPath]
+  });
+  const { version: rootVersion } = require(rootVersionPath);
 
   if (rootVersion !== version) {
     const parents = findAllParentDeps(depName, deps);
+
     for (let i = 0; i < parents.length; i += 1) {
       const parent = parents[i];
-      const parentPath = require.resolve(parent);
+      const parentPath = require.resolve(parent, {
+        paths: [targetPath]
+      });
       const subVersionPath = require.resolve(depName + "/package.json", {
         paths: [parentPath]
       });
@@ -58,41 +64,84 @@ function findPathToVersion(depName, version, deps) {
     }
   }
 
-  const result = path.relative(targetPath, require.resolve(depName));
+  const result = path.relative(
+    targetPath,
+    require.resolve(depName, {
+      paths: [targetPath]
+    })
+  );
   return `/${result}`;
 }
 
-export function resolvePathsAndConflicts(flatDeps, deps, mapResolves = {}) {
-  const resolvedDeps = {};
-  const targetPath = process.cwd();
+async function askForVersionSelection(depName, versions) {
+  const choices = [];
+  versions.forEach(version => {
+    choices.push({
+      title: version,
+      value: version
+    });
+  });
 
-  Object.keys(flatDeps).forEach(depName => {
+  const answers = await prompts([
+    {
+      type: "select",
+      name: "selectedVersion",
+      message: `Could not find compatible versions for ${depName}. Which one to choose?`,
+      choices
+    }
+  ]);
+  return answers.selectedVersion;
+}
+
+export async function resolvePathsAndConflicts(
+  flatDeps,
+  deps,
+  resolveMap = {},
+  targetPath = process.cwd()
+) {
+  const resolvedDeps = {};
+
+  for (const depName of Object.keys(flatDeps)) {
     const depData = flatDeps[depName];
     if (Array.isArray(depData)) {
-      if (Object.keys(mapResolves).includes(depName)) {
-        resolvedDeps[depName] = findPathToVersion(
-          depName,
-          mapResolves[depName],
-          deps
-        );
-      } else {
-        console.log(`ASK for ${depName}`, Versions);
-      }
+      const selectedVersion = Object.keys(resolveMap).includes(depName)
+        ? resolveMap[depName]
+        : await askForVersionSelection(depName, depData);
+      resolvedDeps[depName] = findPathToVersion(depName, selectedVersion, deps);
     } else {
-      const result = path.relative(targetPath, require.resolve(depName));
+      const depPath = require.resolve(depName, {
+        paths: [targetPath]
+      });
+
+      const result = path.relative(targetPath, depPath);
       resolvedDeps[depName] = result;
     }
-  });
+  }
   return resolvedDeps;
 }
 
-export async function generateFromYarnLock(yarnLockString, options) {
+export async function generateFromYarnLock(
+  yarnLockString,
+  packageJson,
+  targetPath = process.cwd()
+) {
   const yarnLock = lockfile.parse(yarnLockString);
 
-  const deps = await findProductionDependencies(yarnLock.object, options);
+  const deps = await findProductionDependencies(
+    yarnLock.object,
+    packageJson,
+    targetPath
+  );
   let flatDeps = flattenYarnLock(deps);
-  flatDeps = resolvePathsAndConflicts(flatDeps, deps);
-  const imports = yarnLockToImports(flatDeps);
-
+  const importMapResolutions = packageJson.importMapResolutions
+    ? packageJson.importMapResolutions
+    : {};
+  flatDeps = await resolvePathsAndConflicts(
+    flatDeps,
+    deps,
+    importMapResolutions,
+    targetPath
+  );
+  const imports = yarnLockToImports(flatDeps, targetPath);
   return { imports };
 }
