@@ -1,9 +1,9 @@
 import chai from "chai";
-import path from "path";
 import fs from "fs";
 import {
   generateFromYarnLock,
-  resolvePathsAndConflicts
+  resolvePathsAndConflicts,
+  flatResolvedDepsToImports
 } from "../src/generateFromYarnLock";
 
 const { expect } = chai;
@@ -31,11 +31,29 @@ describe("resolvePathsAndConflicts", () => {
       {
         "lit-html": "1.1.0"
       },
+      {},
       `${__dirname}/assets/exampleNestedResolution/`
     );
 
     expect(flattened).to.deep.equal({
       "lit-html": "/node_modules/lit-element/node_modules/lit-html/lit-html.js"
+    });
+  });
+});
+
+describe("flatResolvedDepsToImports", () => {
+  it("converts resolved package entry files to imports for subfiles", async () => {
+    const flatResolvedDeps = {
+      "lit-element": "/node_modules/lit-element/lit-element.js",
+      "lit-html": "/node_modules/lit-element/node_modules/lit-html/lit-html.js"
+    };
+    const importMap = flatResolvedDepsToImports(flatResolvedDeps);
+
+    expect(importMap).to.deep.equal({
+      "lit-element": "/node_modules/lit-element/lit-element.js",
+      "lit-element/": "/node_modules/lit-element/",
+      "lit-html": "/node_modules/lit-element/node_modules/lit-html/lit-html.js",
+      "lit-html/": "/node_modules/lit-element/node_modules/lit-html/"
     });
   });
 });
@@ -107,6 +125,89 @@ describe("generateFromYarnLock", () => {
         "lit-html":
           "/node_modules/lit-element/node_modules/lit-html/lit-html.js",
         "lit-html/": "/node_modules/lit-element/node_modules/lit-html/"
+      }
+    });
+  });
+});
+
+describe("generateFromYarnLock supports yarn workspaces", () => {
+  it("creates a flat import map by default", async () => {
+    const targetPath = `${__dirname}/assets/exampleWorkspace/`;
+    const yarnLockString = fs.readFileSync(`${targetPath}/yarn.lock`, "utf-8");
+    const packageJson = JSON.parse(
+      fs.readFileSync(`${targetPath}/package.json`, "utf-8")
+    );
+
+    const importMap = await generateFromYarnLock(
+      yarnLockString,
+      packageJson,
+      targetPath
+    );
+
+    expect(importMap).to.deep.equal({
+      imports: {
+        "lit-element": "/node_modules/lit-element/lit-element.js",
+        "lit-element/": "/node_modules/lit-element/",
+        "lit-html": "/node_modules/lit-html/lit-html.js",
+        "lit-html/": "/node_modules/lit-html/",
+        "@example/a": "/packages/a/a.js",
+        "@example/a/": "/packages/a/",
+        b: "/packages/b/b.js",
+        "b/": "/packages/b/"
+      }
+    });
+  });
+
+  it("creates a flat import map for semver possible nested dependencies", async () => {
+    const targetPath = `${__dirname}/assets/exampleWorkspaceNested/`;
+    const yarnLockString = fs.readFileSync(`${targetPath}/yarn.lock`, "utf-8");
+    const packageJson = JSON.parse(
+      fs.readFileSync(`${targetPath}/package.json`, "utf-8")
+    );
+
+    const importMap = await generateFromYarnLock(
+      yarnLockString,
+      packageJson,
+      targetPath
+    );
+
+    expect(importMap).to.deep.equal({
+      imports: {
+        "lit-element": "/node_modules/lit-element/lit-element.js",
+        "lit-element/": "/node_modules/lit-element/",
+        "lit-html": "/node_modules/lit-html/lit-html.js",
+        "lit-html/": "/node_modules/lit-html/",
+        "@example/a": "/packages/a/a.js",
+        "@example/a/": "/packages/a/",
+        b: "/packages/b/b.js",
+        "b/": "/packages/b/"
+      }
+    });
+  });
+
+  it("creates a flat import map for semver impossible nested dependencies with a resolution", async () => {
+    const targetPath = `${__dirname}/assets/exampleWorkspaceNestedResolution/`;
+    const yarnLockString = fs.readFileSync(`${targetPath}/yarn.lock`, "utf-8");
+    const packageJson = JSON.parse(
+      fs.readFileSync(`${targetPath}/package.json`, "utf-8")
+    );
+
+    const importMap = await generateFromYarnLock(
+      yarnLockString,
+      packageJson,
+      targetPath
+    );
+
+    expect(importMap).to.deep.equal({
+      imports: {
+        "lit-element": "/node_modules/lit-element/lit-element.js",
+        "lit-element/": "/node_modules/lit-element/",
+        "lit-html": "/packages/b/node_modules/lit-html/lit-html.js",
+        "lit-html/": "/packages/b/node_modules/lit-html/",
+        "@example/a": "/packages/a/a.js",
+        "@example/a/": "/packages/a/",
+        b: "/packages/b/b.js",
+        "b/": "/packages/b/"
       }
     });
   });

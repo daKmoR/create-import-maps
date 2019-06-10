@@ -1,25 +1,5 @@
-import glob from "glob";
-import path from "path";
 import fs from "fs";
-
-export async function findPackageJsons(_globString, root = process.cwd()) {
-  const globString = path.join(root, _globString);
-
-  return new Promise(resolve => {
-    const packageJsonPaths = [];
-    glob(globString, {}, (er, files) => {
-      files.forEach(wsPackagePath => {
-        if (fs.lstatSync(wsPackagePath).isDirectory()) {
-          const packageJsonPath = path.join(wsPackagePath, "package.json");
-          if (fs.existsSync(packageJsonPath)) {
-            packageJsonPaths.push(packageJsonPath);
-          }
-        }
-      });
-      resolve(packageJsonPaths);
-    });
-  });
-}
+import { findPackageJson } from "./findPackageJson";
 
 export async function findWorkspaceProdutionDependenies(
   packageJson,
@@ -28,7 +8,7 @@ export async function findWorkspaceProdutionDependenies(
   let deps = packageJson.dependencies ? packageJson.dependencies : {};
   if (packageJson.workspaces) {
     for (const globString of packageJson.workspaces) {
-      const packageJsonPaths = await findPackageJsons(globString, root);
+      const packageJsonPaths = await findPackageJson(globString, root);
       packageJsonPaths.forEach(packageJsonPath => {
         const packageJsonString = fs.readFileSync(packageJsonPath, "utf-8");
         const wsPackageJson = JSON.parse(packageJsonString);

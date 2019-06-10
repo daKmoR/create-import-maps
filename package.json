@@ -1,12 +1,15 @@
 {
-  "name": "wip-create-import-maps",
+  "name": "create-import-map",
   "private": true,
   "version": "0.0.0",
   "description": "WIP: to generate an import map from a yarn lock",
-  "main": "index.js",
+  "main": "dist/generate.js",
+  "bin": {
+    "create-import-map": "./dist/create.js"
+  },
   "scripts": {
     "build": "babel src --out-dir dist --copy-files --include-dotfiles",
-    "start": "npm run build && node ./dist/generate.js",
+    "start": "npm run build && node ./dist/create.js",
     "test": "mocha --require @babel/register",
     "test:ci": "npm run test",
     "test:watch": "onchange 'src/**/*.js' 'test/**/*.js' -- npm run test --silent"

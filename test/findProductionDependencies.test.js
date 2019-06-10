@@ -1,8 +1,8 @@
 import chai from "chai";
+import fs from "fs";
 import {
   findProductionDependencies,
-  findWorkspaceProdutionDependenies,
-  findPackageJsons
+  findWorkspaceProdutionDependenies
 } from "../src/findProductionDependencies.js";
 
 const { expect } = chai;
@@ -62,33 +62,18 @@ describe("findProductionDependencies", () => {
 
 describe("findWorkspaceProdutionDependenies", () => {
   it("returns an object with all production dependencies", async () => {
-    const packageJson = {
-      dependencies: {
-        "test-wc-card": "^0.0.3"
-      },
-      workspaces: ["./assets/exampleWorkspace/*"]
-    };
+    const targetPath = `${__dirname}/assets/exampleWorkspace/`;
+    const packageJson = JSON.parse(
+      fs.readFileSync(`${targetPath}/package.json`, "utf-8")
+    );
+
     const wsDeps = await findWorkspaceProdutionDependenies(
       packageJson,
-      __dirname
+      targetPath
     );
     expect(wsDeps).to.deep.equal({
-      "test-wc-card": true,
       "lit-html": true,
       "lit-element": true
     });
-  });
-});
-
-describe("findPackageJsons", () => {
-  it("returns a list of pathes to package.jsons", async () => {
-    const packageJson = {
-      workspaces: ["./assets/exampleWorkspace/*"]
-    };
-    const wsDeps = await findPackageJsons(packageJson.workspaces[0], __dirname);
-    expect(wsDeps).to.deep.equal([
-      `${__dirname}/assets/exampleWorkspace/a/package.json`,
-      `${__dirname}/assets/exampleWorkspace/b/package.json`
-    ]);
   });
 });
