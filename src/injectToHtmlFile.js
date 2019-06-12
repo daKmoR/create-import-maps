@@ -11,7 +11,13 @@ export default function injectToHtmlFile(fileName, importMap) {
     console.log('Please enter a valid .html file.');
   } else {
     let htmlFile = fs.readFileSync(path.join(process.cwd(), path.sep, fileName), 'utf-8');
-    htmlFile = htmlFile.replace('</body>', `<script type="importmap">${importMap}</script></body>`);
+
+    if(htmlFile.includes('<script type="importmap">')) {
+      htmlFile = htmlFile.replace(/<script type="importmap">(.|\n)*?<\/script><\/script>/, `<script type="importmap">${importMap}</script></body>`);
+    } else {
+      htmlFile = htmlFile.replace('</body>', `<script type="importmap">${importMap}</script></body>`);
+    }
+
     fs.writeFileSync(path.join(process.cwd(), path.sep, fileName), htmlFile, 'utf-8');
   }
 }
