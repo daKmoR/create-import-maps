@@ -1,6 +1,11 @@
 import fs from "fs";
 import path from "path";
+import commandLineArgs from 'command-line-args';
 import { generateFromYarnLock } from "./generateFromYarnLock";
+import injectToHtmlFile from "./injectToHtmlFile";
+
+const optionDefinitions = [{ name: 'inject-to' }]
+const options = commandLineArgs(optionDefinitions)
 
 export async function generate(targetPath = process.cwd()) {
   const yarnLockString = fs.readFileSync(
@@ -20,6 +25,8 @@ export async function generate(targetPath = process.cwd()) {
   );
 
   fs.writeFileSync("./import-map.json", JSON.stringify(result, null, 2));
+
+  if(options['inject-to']) injectToHtmlFile(options['inject-to'], JSON.stringify(result, null, 2));
 }
 
 generate();
