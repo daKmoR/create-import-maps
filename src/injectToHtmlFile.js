@@ -13,9 +13,9 @@ export default function injectToHtmlFile(fileName, importMap) {
     let htmlFile = fs.readFileSync(path.join(process.cwd(), path.sep, fileName), 'utf-8');
 
     if(htmlFile.includes('<script type="importmap">')) {
-      htmlFile = htmlFile.replace(/<script type="importmap">(.|\n)*?<\/script>/, `<script type="importmap">${importMap}</script></body>`);
+      htmlFile = htmlFile.replace(/<script type="importmap">(.|\n)*?<\/script>/, `<script type="importmap">${importMap}</script>`);
     } else {
-      htmlFile = htmlFile.replace('</body>', `<script type="importmap">${importMap}</script></body>`);
+      htmlFile = htmlFile.replace('</head>', `<script type="importmap">${importMap}</script></head>`);
     }
 
     fs.writeFileSync(path.join(process.cwd(), path.sep, fileName), htmlFile, 'utf-8');
