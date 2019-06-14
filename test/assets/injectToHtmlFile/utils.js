@@ -1,5 +1,4 @@
-export const indexHtml = `
-<html>
+export const indexHtml = `<html>
   <head>
     <title>foo</title>
   </head>
@@ -9,8 +8,7 @@ export const indexHtml = `
 </html>
 `;
 
-export const indexHtmlWithImportMap = `
-<html>
+export const indexHtmlWithImportMap = `<html>
   <head>
     <title>foo</title>
     <script type="importmap">

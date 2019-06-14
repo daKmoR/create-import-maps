@@ -1,23 +1,30 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
 
 /**
- * Injects the importmap to the bottom of the body of a html file if specified.
- * @param {String} fileName
+ * Injects the importmap with the following priority
+ * 1. if found replaces an existing importmap
+ * 2. if </head> is found it adds it right before
+ * 3. adds it at the end of the file
+ *
+ * @param {String} filePath
  * @param {String} importMap
  */
-export default function injectToHtmlFile(fileName, importMap) {
-  if(!fileName.endsWith('.html')) {
-    console.log('Please enter a valid .html file.');
+export default function injectToHtmlFile(filePath, importMap) {
+  let fileString = fs.readFileSync(filePath, "utf-8");
+
+  if (fileString.includes('<script type="importmap">')) {
+    fileString = fileString.replace(
+      /<script type="importmap">(.|\n)*?<\/script>/,
+      `<script type="importmap">${importMap}</script>`
+    );
+  } else if (fileString.includes("</head>")) {
+    fileString = fileString.replace(
+      "</head>",
+      `<script type="importmap">${importMap}</script></head>`
+    );
   } else {
-    let htmlFile = fs.readFileSync(path.join(process.cwd(), path.sep, fileName), 'utf-8');
-
-    if(htmlFile.includes('<script type="importmap">')) {
-      htmlFile = htmlFile.replace(/<script type="importmap">(.|\n)*?<\/script>/, `<script type="importmap">${importMap}</script>`);
-    } else {
-      htmlFile = htmlFile.replace('</head>', `<script type="importmap">${importMap}</script></head>`);
-    }
-
-    fs.writeFileSync(path.join(process.cwd(), path.sep, fileName), htmlFile, 'utf-8');
+    fileString += `<script type="importmap">${importMap}</script>`;
   }
+
+  fs.writeFileSync(filePath, fileString, "utf-8");
 }
