@@ -3,7 +3,7 @@ import fs from "fs";
 import {
   generateFromYarnLock,
   resolvePathsAndConflicts,
-  flatResolvedDepsToImports,
+  flatResolvedDepsToImports
 } from "../src/generateFromYarnLock";
 
 const { expect } = chai;
